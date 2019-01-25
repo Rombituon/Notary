@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include notary *.css
+recursive-include notary *.csv
+recursive-include notary *.html
+recursive-include notary *.ico
+recursive-include notary *.js
+recursive-include notary *.json
+recursive-include notary *.md
+recursive-include notary *.png
+recursive-include notary *.py
+recursive-include notary *.svg
+recursive-include notary *.txt
+recursive-exclude notary *.pyc
