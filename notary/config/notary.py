@@ -41,9 +41,34 @@ def get_data():
 				}
 			]
 		},
+                {
+                        "label": _("Tools"),
+			"items": [
+				{
+					"type": "doctype",
+					"name": "Period Closing Voucher",
+					"label": "Fees Closing Voucheud",
+					"description": _("Fees Closing Voucher"),
+				}
+			]
+		},
 		{
                         "label": _("Reproting"),
 			"items": [
+				{
+					"type": "report",
+					"is_query_report": True,
+					"name": "Lead Details",
+					"label": "Notary Income Details",
+					"doctype": "Lead"
+				},
+				{
+					"type": "report",
+					"is_query_report": True,
+					"name": "Lead Details",
+					"label": "Notary Fees Details",
+					"doctype": "Lead"
+				}
 			]
 		}		
 	]

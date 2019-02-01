@@ -37,19 +37,74 @@ class NotarySalesInvoice(AccountsController):
 		})
 
 
+		total_charge_amount = frappe.db.sql("""select sum(charge_fees) as total_charge_fees
+			from `tabNotary Sales Invoice Items` 
+			where parent = %s""", (self.name), as_dict=True)
+
 		income_gl_entry = self.get_gl_dict({
 			"account": self.income_account,
 			"against": self.customer,
-			"credit": self.grand_total * self.currency_conversion,
-			"credit_in_account_currency": self.grand_total * self.currency_conversion,
+#			"credit": self.grand_total * self.currency_conversion,
+			"credit": total_charge_amount[0]['total_charge_fees'],
+#			"credit_in_account_currency": self.grand_total * self.currency_conversion,
+			"credit_in_account_currency": total_charge_amount[0]['total_charge_fees'],
 			"against_voucher": self.name,
 			"against_voucher_type": self.doctype,
 			"cost_center": self.cost_center
 		})
 
-		make_gl_entries([customer_gl_entries, income_gl_entry], cancel=(self.docstatus == 2),
-			update_outstanding="No", merge_entries=False)
 
+		fees_details = frappe.db.sql("""select fees, fees_name, amount
+                        from `tabNotary Sales Invoice Fees`
+                        where parent = %s and docstatus = 1""", (self.name), as_dict=True)
+
+		gl_entry = []
+		gl_entry.append(self.get_gl_dict({
+			"account": self.receivable_account,
+			"against": self.income_account,
+			"party_type": "Customer",
+			"party": self.customer,
+			"debit": self.grand_total * self.currency_conversion,
+			"debit_in_account_currency": self.grand_total * self.currency_conversion,
+			"against_voucher": self.name,
+			"against_voucher_type": self.doctype,
+			"cost_center": self.cost_center
+		}))
+
+
+		gl_entry.append(self.get_gl_dict({
+			"account": self.income_account,
+			"against": self.customer,
+#			"credit": self.grand_total * self.currency_conversion,
+			"credit": total_charge_amount[0]['total_charge_fees'],
+#			"credit_in_account_currency": self.grand_total * self.currency_conversion,
+			"credit_in_account_currency": total_charge_amount[0]['total_charge_fees'],
+			"against_voucher": self.name,
+			"against_voucher_type": self.doctype,
+			"cost_center": self.cost_center
+		}))
+
+
+		for index, d in enumerate(fees_details):
+			
+			fees_account = frappe.db.sql("""select name, fees_name, notary_fees_account, fees_type
+                        	from `tabNotary Fees`
+	                        where name = %s""", (d['fees']), as_dict=True)
+
+			gl_entry.append(self.get_gl_dict({
+				"account": format(fees_account[0]['notary_fees_account']),
+				"against": self.customer,
+#				"credit": self.grand_total * self.currency_conversion,
+				"credit": d['amount'],
+#				"credit_in_account_currency": self.grand_total * self.currency_conversion,
+				"credit_in_account_currency": d['amount'],
+				"against_voucher": self.name,
+				"against_voucher_type": self.doctype,
+				"cost_center": self.cost_center,
+				"remarks": d['fees'] + "-" + format(d['fees_name'])
+			}))
+
+		make_gl_entries(gl_entry, cancel=(self.docstatus == 2), update_outstanding="No", merge_entries=False)
 
 		if self.total_paid_amount > 0:
 
@@ -91,9 +146,12 @@ def get_currency_rate(currency, invoice_date):
 @frappe.whitelist()
 def get_company_accounts(company):
 
-	company_accounts = frappe.db.sql("""select default_receivable_account, default_income_account, cost_center, default_cash_account from `tabCompany` where company_name = %s""", (company), as_dict=True)
+	company_accounts = frappe.db.sql("""select default_receivable_account, cost_center, default_cash_account 
+			from `tabCompany` where company_name = %s""", (company), as_dict=True)
 
-	return company_accounts
+	notary_income_account  = frappe.db.get_single_value('Notary Settings', 'notary_income_account')
+
+	return company_accounts, notary_income_account
 
 @frappe.whitelist()
 def get_customer_currency(customer):
@@ -120,3 +178,13 @@ def get_item_details(item_code):
 #	frappe.msgprint("The fees_details for the item code {0} is {1}". format(item_code, fees_details))
 
 	return fees_details
+
+
+@frappe.whitelist()
+def get_notary_fees():
+
+
+	notary_fees = frappe.db.sql("""select name, fees_name, notary_fees_account, fees_type, "" as amount from `tabNotary Fees`
+			order by fees_type, name asc""", as_dict=True)
+
+	return notary_fees
