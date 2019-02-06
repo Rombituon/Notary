@@ -317,6 +317,7 @@ var get_notary_item_details = function(frm, cdt, cdn) {
 			refresh_field('section_break_17');
 			refresh_field('total_items_cur1');
 			refresh_field("items");
+//			frm.refresh();
 			items_calculation(frm,cdt,cdn);
 		}
 	});
@@ -384,7 +385,7 @@ var items_calculation = function(frm, cdt, cdn) {
 	frm.set_value("total_fees_cur1", total_fees);
 	refresh_field('section_break_21');
 	refresh_field('total_fees_cur1');
-
+//	frm.refresh();
 /*
 	$.each(notary_fees_table, function(k, row2) {
 		if (row2.amount != 0) {

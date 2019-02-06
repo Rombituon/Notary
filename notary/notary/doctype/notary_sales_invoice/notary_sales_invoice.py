@@ -17,6 +17,11 @@ class NotarySalesInvoice(AccountsController):
 
 		delete_gl_entries(voucher_type=self.doctype, voucher_no=self.name)
 
+	def validate(self):
+		from frappe.utils import money_in_words
+		self.in_words = money_in_words(self.grand_total, self.customer_currency)
+		self.outstanding_in_words = money_in_words(self.outstanding_amount, self.customer_currency)
+		self.title = self.customer_name
 
 	def on_submit(self):
 		if (self.grand_total != 0):
